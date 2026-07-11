@@ -18,7 +18,7 @@ pub struct Description {
     pub year: String,
 }
 
-fn get_meta_content(document: &Html, attr: &str, value: &str) -> Result<String, Box<dyn Error>> {
+pub fn get_meta_content(document: &Html, attr: &str, value: &str) -> Result<String, Box<dyn Error>> {
     let selector_body = format!(r#"meta[{}="{}"]"#, attr, value);
     let selector = scraper::Selector::parse(&selector_body).unwrap();
     let element = document.select(&selector).next().ok_or("meta tag not found")?;
@@ -27,7 +27,7 @@ fn get_meta_content(document: &Html, attr: &str, value: &str) -> Result<String, 
     Ok(res.to_string())
 }
 
-pub async fn get_metadata(url: &str) -> Result<Song, Box<dyn Error>> {
+pub async fn get_track_metadata(url: &str) -> Result<Song, Box<dyn Error>> {
     let html = reqwest::get(url).await?.text().await?;
     let document = Html::parse_document(&html);
 
