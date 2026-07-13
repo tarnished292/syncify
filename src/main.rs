@@ -1,8 +1,6 @@
 use syncify::download;
 
-const URL: &str = "https://open.spotify.com/track/1UGD3lW3tDmgZfAVDh6w7r?si=f66596d3899347d5";
-
-// const URL: &str = "https://open.spotify.com/track/6Qyc6fS4DsZjB2mRW9DsQs?si=4098d33fff7c4737";
+const URL: &str = "https://open.spotify.com/track/40riOy7x9W7GXjyGp4pjAv?si=25c9e9e9fc214a72";
 
 #[tokio::main]
 async fn main() {

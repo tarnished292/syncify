@@ -1,6 +1,4 @@
 use std::error::Error;
-
-use reqwest::Url;
 use scraper::Html;
 use serde::Deserialize;
 

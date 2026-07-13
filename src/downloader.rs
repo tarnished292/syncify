@@ -1,4 +1,4 @@
-use std::{io::Error, path::PathBuf, process::Command, str};
+use std::{io::Error, path::{Path, PathBuf}, process::Command, str};
 
 use crate::scrapper::Song;
 
@@ -102,8 +102,15 @@ pub fn download_song(
     song: &Song,
     output_dir: &str,
 ) -> Result<PathBuf, Error> {
+    let expected_path = format!("{}/{}.mp3", output_dir, sanitize_filename(&song.title));
+
+    if Path::new(&expected_path).exists() {
+        eprintln!("Skipping download, file already exists: {}", expected_path);
+        return Ok(PathBuf::from(expected_path));
+    }
+
     let url = format!("https://youtube.com/watch?v={}", candidate.id);
-    let output_template = format!("{}/{}.%(ext)s", output_dir, song.title);
+    let output_template = format!("{}/{}.%(ext)s", output_dir, sanitize_filename(&song.title));
 
     let output = Command::new("yt-dlp")
         .arg("-f")
@@ -134,4 +141,11 @@ pub fn download_song(
     }
 
     Ok(PathBuf::from(path_str))
+}
+
+
+fn sanitize_filename(name: &str) -> String {
+    name.chars()
+        .map(|c| if r#"/\:*?"<>|"#.contains(c) { '_' } else { c })
+        .collect()
 }

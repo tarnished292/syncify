@@ -59,12 +59,15 @@ async fn process_song(song: &Song) {
             red_println!("Video Duration: {}", candidate.duration);
             println!("============================");
 
+            let music_dir = dirs::audio_dir().unwrap();
+            let music_path = music_dir.to_string_lossy().to_string();
+
             let song_for_download = song.clone();
             let candidate_for_download = candidate.clone();
             let song_for_lyrics = song.clone();
 
             let download_task = tokio::task::spawn_blocking(move || {
-                download_song(&candidate_for_download, &song_for_download, "Download")
+                download_song(&candidate_for_download, &song_for_download, &music_path)
             });
 
             let lyrics_task = tokio::spawn(async move { get_lyrics(&song_for_lyrics).await });

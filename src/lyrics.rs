@@ -11,33 +11,75 @@ struct LyricsResponse {
 }
 
 static CLIENT: OnceLock<reqwest::Client> = OnceLock::new();
-
-pub async fn get_lyrics(song: &Song) -> Option<String> {
-    let client = CLIENT.get_or_init(reqwest::Client::new);
-
-    let primary_artist = song.description.artist.split(',').next().unwrap_or(&song.description.artist);
-     let clean_song_title = clean_title(&song.title);
-      let duration_str = song.duration.to_string();
-     let query = vec![
-           ("track_name", clean_song_title.as_str()),
-           ("artist_name", primary_artist),
-           ("duration", duration_str.as_str()),
-       ];
-
-    let response = client
+async fn try_fetch(
+    client: &reqwest::Client,
+    title: &str,
+    artist: &str,
+    duration: Option<&str>,
+) -> Option<String> {
+    let mut request = client
         .get("https://lrclib.net/api/get")
-        .query(&query)
-        .send()
-        .await
-        .ok()?;
-    println!("{}", response.status());
+        .query(&[
+            ("track_name", title),
+            ("artist_name", artist),
+        ]);
+
+    if let Some(duration) = duration {
+        request = request.query(&[
+            ("duration", duration)
+        ]);
+    }
+
+    let response = request.send().await.ok()?;
+
+    if !response.status().is_success() {
+        return None;
+    }
 
     let lyrics = response.json::<LyricsResponse>().await.ok()?;
 
     Some(lyrics.synced_lyrics)
 }
 
+pub async fn get_lyrics(song: &Song) -> Option<String> {
+    let client = CLIENT.get_or_init(reqwest::Client::new);
 
+    let original_title = song.title.as_str();
+    let clean_title = clean_title(original_title);
+
+    let full_artist = song.description.artist.as_str();
+
+    let primary_artist = full_artist
+        .split(',')
+        .next()
+        .unwrap_or(full_artist)
+        .trim();
+
+    let duration = song.duration.as_str();
+
+    let attempts = [
+        (original_title, full_artist, Some(duration)),
+        (clean_title.as_str(), full_artist, Some(duration)),
+        (clean_title.as_str(), primary_artist, Some(duration)),
+        (clean_title.as_str(), primary_artist, None),
+    ];
+
+    for (title, artist, duration) in attempts {
+        println!("Trying: {} - {}", artist, title);
+
+        if let Some(lyrics) = try_fetch(
+            client,
+            title,
+            artist,
+            duration,
+        ).await {
+            println!("Lyrics matched using: {} - {}", artist, title);
+            return Some(lyrics);
+        }
+    }
+
+    None
+}
 
 fn clean_title(title: &str) -> String {
    
