@@ -1,7 +1,8 @@
-use std::{io::Error, process::Command, str};
+use std::{io::Error, path::PathBuf, process::Command, str};
 
 use crate::scrapper::Song;
 
+#[derive(Debug)]
 pub struct YtDlpResult {
     pub id: String,
     pub title: String,
@@ -9,14 +10,15 @@ pub struct YtDlpResult {
     pub uploader: String,
 }
 
-pub async fn search_candidates(song: &Song) -> Result<Vec<YtDlpResult>, Error> {
+pub async fn best_candidates(song: &Song) -> Option<YtDlpResult> {
     let query = format!("ytsearch5: {} {}", song.title, song.description.artist);
     let output_url = Command::new("yt-dlp")
         .arg("--skip-download")
         .arg("--print")
         .arg("%(id)s|%(title)s|%(duration)s|%(uploader)s")
         .arg(&query)
-        .output()?;
+        .output()
+        .ok()?;
 
     let mut results = Vec::new();
     let output = String::from_utf8_lossy(&output_url.stdout);
@@ -37,12 +39,8 @@ pub async fn search_candidates(song: &Song) -> Result<Vec<YtDlpResult>, Error> {
             uploader,
         })
     }
-    Ok(results)
-}
-
-pub fn score_candidate<'a>(song: &Song, results: &'a Vec<YtDlpResult>) -> Option<&'a YtDlpResult> {
     let mut best_score = i32::MIN;
-    let mut best: Option<&YtDlpResult> = None;
+    let mut best: Option<YtDlpResult> = None;
 
     for candidates in results {
         let mut score = 0;
@@ -96,4 +94,36 @@ pub fn score_candidate<'a>(song: &Song, results: &'a Vec<YtDlpResult>) -> Option
         }
     }
     best
+}
+
+pub fn download_song(
+    candidate: &YtDlpResult,
+    song: &Song,
+    output_dir: &str,
+) -> Result<PathBuf, Error> {
+    let url = format!("https://youtube.com/watch?v={}", candidate.id);
+    let output_template = format!("{}/{}.%(ext)s", output_dir, song.title);
+
+    let output = Command::new("yt-dlp")
+        .arg("-x")
+        .arg("--audio-format")
+        .arg("mp3")
+        .arg("-o")
+        .arg(output_template)
+        .arg("--print")
+        .arg("after_move:filepath")
+        .arg(&url)
+        .output()?;
+
+
+    let path_str = String::from_utf8_lossy(&output.stdout).trim().to_string();
+
+    if path_str.is_empty() {
+        return Err(Error::new(
+            std::io::ErrorKind::Other,
+            "yt-dlp did not return a file path",
+        ));
+    }
+
+    Ok(PathBuf::from(path_str))
 }
