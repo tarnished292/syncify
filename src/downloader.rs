@@ -2,7 +2,7 @@ use std::{io::Error, path::PathBuf, process::Command, str};
 
 use crate::scrapper::Song;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct YtDlpResult {
     pub id: String,
     pub title: String,
@@ -11,8 +11,9 @@ pub struct YtDlpResult {
 }
 
 pub async fn best_candidates(song: &Song) -> Option<YtDlpResult> {
-    let query = format!("ytsearch5: {} {}", song.title, song.description.artist);
+    let query = format!("ytsearch2: {} {}", song.title, song.description.artist);
     let output_url = Command::new("yt-dlp")
+        .arg("--flat-playlist")
         .arg("--skip-download")
         .arg("--print")
         .arg("%(id)s|%(title)s|%(duration)s|%(uploader)s")
@@ -105,16 +106,23 @@ pub fn download_song(
     let output_template = format!("{}/{}.%(ext)s", output_dir, song.title);
 
     let output = Command::new("yt-dlp")
+        .arg("-f")
+        .arg("bestaudio")
         .arg("-x")
         .arg("--audio-format")
         .arg("mp3")
+        .arg("--postprocessor-args")
+        .arg("ffmpeg:-preset ultrafast")
         .arg("-o")
         .arg(output_template)
         .arg("--print")
         .arg("after_move:filepath")
         .arg(&url)
         .output()?;
-
+    eprintln!(
+        "--- stderr ---\n{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
 
     let path_str = String::from_utf8_lossy(&output.stdout).trim().to_string();
 
