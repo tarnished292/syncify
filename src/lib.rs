@@ -1,16 +1,14 @@
-mod scrapper;
-mod playlist;
-mod downloader;
-mod lyrics;
-mod tag;
-mod wire;
-mod writer;
+pub fn add(left: u64, right: u64) -> u64 {
+    left + right
+}
 
-pub use scrapper::get_track_metadata;
-pub use playlist::playlist_metadata;
-pub use downloader::best_candidates;    
-pub use downloader::download_song;   
-pub use lyrics::get_lyrics;
-pub use writer::write_lrc;
-pub use wire::download;
-pub use tag::write_metadata;
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn it_works() {
+        let result = add(2, 2);
+        assert_eq!(result, 4);
+    }
+}
