@@ -1,5 +1,6 @@
 use std::error::Error;
 use scraper::Html;
+use std::time::Instant;
 use serde::Deserialize;
 
 #[derive(Deserialize, Debug, Clone)]
@@ -38,8 +39,11 @@ pub fn get_meta_content(
 }
 
 pub async fn get_track_metadata(url: &str) -> Result<Song, Box<dyn Error>> {
+    let start = Instant::now();
     let html = reqwest::get(url).await?.text().await?;
+    println!("request took {:?}", start.elapsed());
     let document = Html::parse_document(&html);
+    println!("html parse {:?}", start.elapsed());
 
     let spotify_id = extrack_spotify_id(&url).ok_or("Could not find Spotify track Id")?;
     let title = get_meta_content(&document, "property", "og:title")?;

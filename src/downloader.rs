@@ -11,7 +11,7 @@ pub struct YtDlpResult {
 }
 
 pub async fn best_candidates(song: &Song) -> Option<YtDlpResult> {
-    let query = format!("ytsearch2: {} {}", song.title, song.description.artist);
+    let query = format!("ytsearch5: {} {}", song.title, song.description.artist);
     let output_url = Command::new("yt-dlp")
         .arg("--flat-playlist")
         .arg("--skip-download")
