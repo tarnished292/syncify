@@ -2,10 +2,11 @@ use std::io::Error;
 use std::{path::PathBuf, process::Command};
 
 use crate::dlp::search::Candidate;
+use crate::spotify::track::Track;
 
-pub async fn download(best: &Candidate, output: PathBuf) -> Result<PathBuf, Error> {
+pub fn download(best: &Candidate, track: &Track, output: &PathBuf) -> Result<PathBuf, Error> {
     let download_arg = format!("https://www.youtube.com/watch?v={}", best.video_id);
-    let output_template = output.join("%(title)s.%(ext)s");
+    let output_template = output.join(format!("{}.%(ext)s", track.title));
     let result = Command::new("yt-dlp")
         .args([
             "-f",
@@ -18,6 +19,8 @@ pub async fn download(best: &Candidate, output: PathBuf) -> Result<PathBuf, Erro
             "mp3",
             "--audio-quality",
             "0",
+            "--cookies",
+            "cookies.txt",
             "--print",
             "after_move:filepath",
             "-o",
@@ -25,6 +28,10 @@ pub async fn download(best: &Candidate, output: PathBuf) -> Result<PathBuf, Erro
         .arg(&output_template)
         .arg(&download_arg)
         .output()?;
+
+    println!("status: {}", result.status);
+    println!("stdout:\n{}", String::from_utf8_lossy(&result.stdout));
+    println!("stderr:\n{}", String::from_utf8_lossy(&result.stderr));
 
     let path_str = String::from_utf8_lossy(&result.stdout).trim().to_string();
     println!("{path_str}");

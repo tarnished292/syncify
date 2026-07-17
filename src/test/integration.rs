@@ -7,30 +7,31 @@ use futures::stream::{self, StreamExt};
 use macro_colors::green_println;
 use macro_colors::{Colorize, red_println};
 use rand::Rng;
+use std::path::PathBuf;
 use std::time::Duration;
 use std::time::Instant;
 use tokio::time::sleep;
 
 pub async fn wire(url: &str) {
     let start = Instant::now();
+    let audio_dir = dirs::audio_dir().unwrap();
 
     if url.contains("/track/") {
-        process_song(url).await;
+        process_song(url, &audio_dir).await;
     } else {
         let songs = get_playlist_metadata(url).await.unwrap();
-        stream::iter(&songs)
-            .for_each_concurrent(5, |track| async move {
-                process_song(&track).await;
-            })
-            .await;
         println!("{} Songs Found Inside the playlist", &songs.len());
+        for track in &songs {
+            process_song(&track, &audio_dir).await;
+        }
+
     }
 
     println!("Time Taken {:?}", start.elapsed());
     println!("======================");
 }
 
-async fn process_song(song: &str) {
+async fn process_song(song: &str, dir: &PathBuf) {
     let jitter = rand::thread_rng().gen_range(50..300);
     sleep(Duration::from_millis(jitter)).await;
     let song = get_song_details(song).await.unwrap();
@@ -45,11 +46,21 @@ async fn process_song(song: &str) {
     let yt_data = search_candidate(&song);
 
     let best = score(&yt_data, &song);
-        println!("Best Data from Yt-DLP");
-        red_println!("Title: {:?}", best.video_id);
-        red_println!("Title: {:?}", best.duration);
+    println!("Best Data from Yt-DLP");
+    red_println!("Title: {:?}", best.video_id);
+    red_println!("Title: {:?}", best.title);
+    red_println!("Title: {:?}", best.uploader);
+    red_println!("Title: {:?}", best.duration);
 
-        let audio_dir = dirs::audio_dir().unwrap();
-        let output = download(&best, audio_dir).await.unwrap();
-        write_metadata(&song, output).await;
+    let output = match download(&best, &song, &dir) {
+        Ok(path) => path,
+        Err(e) => {
+            red_println!("Download failed: {e:?}");
+            return;
+        }
+    };
+
+    if let Err(e) = write_metadata(&song, output).await {
+        red_println!("Failed to write metadata: {e:?}");
+    }
 }

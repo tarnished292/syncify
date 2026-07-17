@@ -1,7 +1,6 @@
 use crate::spotify::track::Track;
 use std::process::Command;
 
-
 #[derive(Clone)]
 pub struct Candidate {
     pub video_id: String,
