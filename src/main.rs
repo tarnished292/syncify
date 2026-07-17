@@ -10,5 +10,5 @@ const TEST: &str = "https://open.spotify.com/playlist/6XIAWqIZ2oGU3b2g6nX2O0?si=
 
 #[tokio::main]
 async fn main() {
-    wire(TEST).await;
+    wire(TRACK).await;
 }

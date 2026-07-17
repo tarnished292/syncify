@@ -7,6 +7,7 @@ pub struct Track {
     pub title: String,
     pub description: Description,
     pub duration: String,
+    pub image: String,
 }
 
 pub struct Description {
@@ -23,6 +24,7 @@ pub async fn get_song_details(url: &str) -> Result<Track, Box<dyn Error>> {
     let title = get_meta_content(&document, "property", "og:title")?;
     let description = get_meta_content(&document, "property", "og:description")?;
     let duration = get_meta_content(&document, "name", "music:duration")?;
+    let image = get_meta_content(&document, "property", "og:image")?;
 
     let description: Vec<&str> = description.split(" · ").collect();
     let artist = description[0].to_string();
@@ -39,5 +41,6 @@ pub async fn get_song_details(url: &str) -> Result<Track, Box<dyn Error>> {
         title,
         description,
         duration,
+        image,
     })
 }

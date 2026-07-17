@@ -1,5 +1,7 @@
+use crate::dlp::download::download;
 use crate::dlp::score::score;
 use crate::dlp::search::search_candidate;
+use crate::metadata::tag::write_metadata;
 use crate::spotify::{playlist::get_playlist_metadata, track::get_song_details};
 use futures::stream::{self, StreamExt};
 use macro_colors::green_println;
@@ -45,4 +47,9 @@ async fn process_song(song: &str) {
     let best = score(&yt_data, &song);
         println!("Best Data from Yt-DLP");
         red_println!("Title: {:?}", best.video_id);
+        red_println!("Title: {:?}", best.duration);
+
+        let audio_dir = dirs::audio_dir().unwrap();
+        let output = download(&best, audio_dir).await.unwrap();
+        write_metadata(&song, output).await;
 }

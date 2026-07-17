@@ -11,7 +11,6 @@ pub struct Candidate {
 }
 
 pub fn search_candidate(song: &Track) -> Vec<Candidate> {
-    let primary_artist = song.description.artist.split(",").next().unwrap_or("");
     let search_format = format!("ytsearch2: {}", song.title);
     println!("Search Query: {search_format}");
 
