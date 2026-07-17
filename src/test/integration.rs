@@ -1,9 +1,10 @@
 use crate::dlp::download::download;
 use crate::dlp::score::score;
 use crate::dlp::search::search_candidate;
+use crate::lyrics::lyrics::get_lyrics;
 use crate::metadata::tag::write_metadata;
+use crate::metadata::writer::write_lrc;
 use crate::spotify::{playlist::get_playlist_metadata, track::get_song_details};
-use futures::stream::{self, StreamExt};
 use macro_colors::green_println;
 use macro_colors::{Colorize, red_println};
 use rand::Rng;
@@ -24,7 +25,6 @@ pub async fn wire(url: &str) {
         for track in &songs {
             process_song(&track, &audio_dir).await;
         }
-
     }
 
     println!("Time Taken {:?}", start.elapsed());
@@ -60,7 +60,16 @@ async fn process_song(song: &str, dir: &PathBuf) {
         }
     };
 
-    if let Err(e) = write_metadata(&song, output).await {
+    if let Err(e) = write_metadata(&song, &output).await {
         red_println!("Failed to write metadata: {e:?}");
+    }
+
+    match get_lyrics(&song).await {
+        Some(lyrics) => {
+            if let Err(e) = write_lrc(&output, &lyrics) {
+                eprintln!("Failed to write Lrc: {}", e);
+            }
+        }
+        None => red_println!("No Lyrics Found for {}", song.title),
     }
 }

@@ -10,7 +10,7 @@ pub struct Candidate {
 }
 
 pub fn search_candidate(song: &Track) -> Vec<Candidate> {
-    let search_format = format!("ytsearch2: {}", song.title);
+    let search_format = format!("ytsearch3: {}", song.title);
     println!("Search Query: {search_format}");
 
     let command = Command::new("yt-dlp")

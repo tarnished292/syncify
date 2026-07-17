@@ -4,7 +4,7 @@ use id3::{Tag, TagLike, Version, frame::Picture};
 
 use crate::spotify::track::Track;
 
-pub async fn write_metadata(track: &Track, path: PathBuf) -> Result<(), Box<dyn std::error::Error>> {
+pub async fn write_metadata(track: &Track, path: &PathBuf) -> Result<(), Box<dyn std::error::Error>> {
     let mut tag = Tag::new();
     tag.set_title(&track.title);
     tag.set_album(&track.description.album);
