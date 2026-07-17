@@ -1,10 +1,13 @@
 use std::io::Error;
-use std::{path::PathBuf, process::Command};
+use std::{path::PathBuf};
+
+
+use tokio::process::Command;
 
 use crate::dlp::search::Candidate;
 use crate::spotify::track::Track;
 
-pub fn download(best: &Candidate, track: &Track, output: &PathBuf) -> Result<PathBuf, Error> {
+pub async fn download(best: &Candidate, track: &Track, output: &PathBuf) -> Result<PathBuf, Error> {
     let download_arg = format!("https://www.youtube.com/watch?v={}", best.video_id);
     let output_template = output.join(format!("{}.%(ext)s", sanitize_filename(&track.title)));
     let result = Command::new("yt-dlp")
@@ -27,7 +30,8 @@ pub fn download(best: &Candidate, track: &Track, output: &PathBuf) -> Result<Pat
         ])
         .arg(&output_template)
         .arg(&download_arg)
-        .output()?;
+        .output()
+        .await?;
 
     println!("status: {}", result.status);
     // println!("stdout:\n{}", String::from_utf8_lossy(&result.stdout));

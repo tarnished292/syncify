@@ -1,7 +1,8 @@
-use crate::{lyrics::sanitize::clean_title, spotify::track::Track};
 use reqwest;
 use serde::Deserialize;
 use std::sync::OnceLock;
+use crate::{lyrics::sanitize::clean_title, spotify::track::Track};
+
 
 #[derive(Deserialize)]
 struct LyricsResponse {
@@ -18,11 +19,19 @@ async fn try_fetch(
 ) -> Option<String> {
     let mut request = client
         .get("https://lrclib.net/api/get")
-        .query(&[("track_name", title), ("artist_name", artist)]);
+        .query(&[
+            ("track_name", title),
+            ("artist_name", artist),
+        ]);
+
     if let Some(duration) = duration {
-        request = request.query(&[("duration", duration)]);
+        request = request.query(&[
+            ("duration", duration)
+        ]);
     }
+
     let response = request.send().await.ok()?;
+
     if !response.status().is_success() {
         return None;
     }
@@ -31,6 +40,7 @@ async fn try_fetch(
 
     Some(lyrics.synced_lyrics)
 }
+
 pub async fn get_lyrics(song: &Track) -> Option<String> {
     let client = CLIENT.get_or_init(reqwest::Client::new);
 
@@ -39,7 +49,11 @@ pub async fn get_lyrics(song: &Track) -> Option<String> {
 
     let full_artist = song.description.artist.as_str();
 
-    let primary_artist = full_artist.split(',').next().unwrap_or(full_artist).trim();
+    let primary_artist = full_artist
+        .split(',')
+        .next()
+        .unwrap_or(full_artist)
+        .trim();
 
     let duration = song.duration.as_str();
 
@@ -53,7 +67,12 @@ pub async fn get_lyrics(song: &Track) -> Option<String> {
     for (title, artist, duration) in attempts {
         println!("Trying: {} - {}", artist, title);
 
-        if let Some(lyrics) = try_fetch(client, title, artist, duration).await {
+        if let Some(lyrics) = try_fetch(
+            client,
+            title,
+            artist,
+            duration,
+        ).await {
             println!("Lyrics matched using: {} - {}", artist, title);
             return Some(lyrics);
         }

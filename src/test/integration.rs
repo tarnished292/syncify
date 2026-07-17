@@ -20,7 +20,13 @@ pub async fn wire(url: &str) {
     if url.contains("/track/") {
         process_song(url, &audio_dir).await;
     } else {
-        let songs = get_playlist_metadata(url).await.unwrap();
+        let songs = match get_playlist_metadata(url).await {
+            Ok(songs) => songs,
+            Err(e) => {
+                red_println!("Failed to fetch Playlist for {:?}", e);
+                return;
+            }
+        };
         println!("{} Songs Found Inside the playlist", &songs.len());
         for track in &songs {
             process_song(&track, &audio_dir).await;
@@ -34,7 +40,14 @@ pub async fn wire(url: &str) {
 async fn process_song(song: &str, dir: &PathBuf) {
     let jitter = rand::thread_rng().gen_range(50..300);
     sleep(Duration::from_millis(jitter)).await;
-    let song = get_song_details(song).await.unwrap();
+
+    let song = match get_song_details(song).await {
+        Ok(song) => song,
+        Err(e) => {
+            red_println!("Failed to fetch metadata {:?}", e);
+            return;
+        }
+    };
     println!("Data From Spotify");
     green_println!("Title: {:?}", song.title);
     green_println!("Artist: {:?}", song.description.artist);
@@ -45,14 +58,22 @@ async fn process_song(song: &str, dir: &PathBuf) {
 
     let yt_data = search_candidate(&song);
 
-    let best = score(&yt_data, &song);
+    let best = match score(&yt_data, &song) {
+        Some(best) => best,
+        None => {
+            red_println!("No matching YouTube candidate found for {}", song.title);
+            return;
+        }
+    };
+
     println!("Best Data from Yt-DLP");
     red_println!("Title: {:?}", best.video_id);
     red_println!("Title: {:?}", best.title);
     red_println!("Title: {:?}", best.uploader);
     red_println!("Title: {:?}", best.duration);
 
-    let output = match download(&best, &song, &dir) {
+    let (mp3, lyrics) = tokio::join!(download(&best, &song, &dir), get_lyrics(&song));
+    let output = match mp3{
         Ok(path) => path,
         Err(e) => {
             red_println!("Download failed: {e:?}");
@@ -60,11 +81,12 @@ async fn process_song(song: &str, dir: &PathBuf) {
         }
     };
 
+
     if let Err(e) = write_metadata(&song, &output).await {
         red_println!("Failed to write metadata: {e:?}");
     }
 
-    match get_lyrics(&song).await {
+    match lyrics {
         Some(lyrics) => {
             if let Err(e) = write_lrc(&output, &lyrics) {
                 eprintln!("Failed to write Lrc: {}", e);

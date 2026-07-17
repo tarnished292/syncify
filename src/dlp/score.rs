@@ -1,18 +1,32 @@
 use crate::{dlp::search::Candidate, spotify::track::Track};
 
+fn core_title(t: &str) -> String {
+    t.split(['(', '[', '-'])
+        .next()
+        .unwrap_or(t)
+        .trim()
+        .to_lowercase()
+}
 
-pub fn score(results: &Vec<Candidate>, track: &Track) -> Candidate {
+pub fn score(results: &Vec<Candidate>, track: &Track) -> Option<Candidate> {
     let mut best_score = i32::MIN;
     let mut best_candidate = None;
+
+    let primary_artist = track
+        .description
+        .artist
+        .split(",")
+        .next()
+        .unwrap_or("")
+        .trim()
+        .to_lowercase();
+    let core = core_title(&track.title);
+    let spotify_duration: u32 = track.duration.parse().unwrap_or(0);
 
     for candidate in results {
         let title = candidate.title.to_lowercase();
         let uploader = candidate.uploader.to_lowercase();
-         let primary_artist = track.description.artist.split(",").next().unwrap_or("");
-
         let yt_duration: u32 = candidate.duration.parse().unwrap_or(0);
-        let spotify_duration: u32 = track.duration.parse().unwrap_or(0);
-
         let diff = yt_duration.abs_diff(spotify_duration);
 
         let mut score = 0;
@@ -27,23 +41,36 @@ pub fn score(results: &Vec<Candidate>, track: &Track) -> Candidate {
             score -= 2
         }
         if title.contains("sped up") {
-            score -= 4
+            score -= 14
         }
         if title.contains("live") {
             score -= 2
         }
-        if uploader.contains(&primary_artist.to_lowercase()) {
-            score += 2
+        if title.contains("lyrics") {
+            score -= 1
         }
-        if title.contains(&track.title.to_lowercase()) {
+        if uploader.contains(&primary_artist) {
+            score += 2
+        } else {
+            score -= 2
+        }
+        if !title.contains(&primary_artist) {
+            score -= 4;
+        }
+        if !core.is_empty() && title.contains(&core) {
             score += 4
         }
-        if diff <= 3 {
-            score += 5;
+
+        if diff <= 2 {
+            score += 4;
+        } else if diff <= 5 {
+            score -= 1;
         } else if diff <= 10 {
-            score += 2;
-        } else if diff > 20 {
-            score -= 5;
+            score -= 3;
+        } else if diff <= 20 {
+            score -= 8;
+        } else {
+            score -= 15;
         }
 
         if score > best_score {
@@ -51,8 +78,6 @@ pub fn score(results: &Vec<Candidate>, track: &Track) -> Candidate {
             best_candidate = Some(candidate.clone());
         }
     }
-
-    let best_candidate = best_candidate.expect("No Best candidate Found");
 
     best_candidate
 }

@@ -1,4 +1,4 @@
-use crate::spotify::track::Track;
+use crate::{spotify::track::Track};
 use std::process::Command;
 
 #[derive(Clone)]
@@ -10,7 +10,7 @@ pub struct Candidate {
 }
 
 pub fn search_candidate(song: &Track) -> Vec<Candidate> {
-    let search_format = format!("ytsearch3: {}", song.title);
+    let search_format = format!("ytsearch3: {} {}", song.title, song.description.artist);
     println!("Search Query: {search_format}");
 
     let command = Command::new("yt-dlp")
