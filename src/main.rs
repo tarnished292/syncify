@@ -1,7 +1,7 @@
 use syncify::test::integration::wire;
 
 // Single Track
-const TRACK: &str = "https://open.spotify.com/track/2KzCkzW1nt8qGHjYoTWGlc?si=c881c6c9f725444e";
+const TRACK: &str = "https://open.spotify.com/track/1cQ3LIkZE68pMSnPhZWXLu?si=a1c0be0991b0417b";
 
 // Playlist
 const URL: &str = "https://open.spotify.com/playlist/2DIftVgibXX2uaTEf6L4a3?si=e6a1d51749ef47d5";
@@ -10,5 +10,5 @@ const TEST: &str = "https://open.spotify.com/playlist/6XIAWqIZ2oGU3b2g6nX2O0?si=
 
 #[tokio::main]
 async fn main() {
-    wire(URL).await;
+    wire(TRACK).await;
 }

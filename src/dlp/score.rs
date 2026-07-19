@@ -46,17 +46,13 @@ pub fn score(results: &Vec<Candidate>, track: &Track) -> Option<Candidate> {
         if title.contains("live") {
             score -= 2
         }
-        if title.contains("lyrics") {
-            score -= 1
-        }
         if uploader.contains(&primary_artist) {
             score += 2
         } else {
-            score -= 2
+            score -= 1
         }
-        if !title.contains(&primary_artist) {
-            score -= 4;
-        }
+
+       
         if !core.is_empty() && title.contains(&core) {
             score += 4
         }
