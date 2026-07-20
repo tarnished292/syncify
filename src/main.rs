@@ -1,7 +1,7 @@
 use syncify::test::integration::wire;
 
 // Single Track
-const TRACK: &str = "https://open.spotify.com/track/1cQ3LIkZE68pMSnPhZWXLu?si=a1c0be0991b0417b";
+const TRACK: &str = "https://open.spotify.com/track/6jgkEbmQ2F2onEqsEhiliL?si=03c42e1f8c9f42ab";
 
 // Playlist
 const URL: &str = "https://open.spotify.com/playlist/2DIftVgibXX2uaTEf6L4a3?si=e6a1d51749ef47d5";

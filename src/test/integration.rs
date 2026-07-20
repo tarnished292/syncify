@@ -9,6 +9,7 @@ use macro_colors::green_println;
 use macro_colors::{Colorize, red_println};
 use rand::Rng;
 use std::path::PathBuf;
+use std::ptr::dangling;
 use std::time::Duration;
 use std::time::Instant;
 use tokio::time::sleep;
@@ -57,6 +58,13 @@ async fn process_song(song: &str, dir: &PathBuf) {
     green_println!("======================");
 
     let yt_data = search_candidate(&song);
+    for data in &yt_data {
+        
+    red_println!("VIDEO ID: {:?}", data.video_id);
+    red_println!("Title: {:?}", data.title);
+    red_println!("UPLOADER: {:?}", data.uploader);
+    red_println!("Duration: {:?}", data.duration);
+    }
 
     let best = match score(&yt_data, &song) {
         Some(best) => best,

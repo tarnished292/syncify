@@ -1,4 +1,7 @@
-use crate::{dlp::search::Candidate, spotify::track::Track};
+use crate::{
+    dlp::search::Candidate,
+    spotify::{self, track::Track},
+};
 
 fn core_title(t: &str) -> String {
     t.split(['(', '[', '-'])
@@ -20,53 +23,75 @@ pub fn score(results: &Vec<Candidate>, track: &Track) -> Option<Candidate> {
         .unwrap_or("")
         .trim()
         .to_lowercase();
-    let core = core_title(&track.title);
-    let spotify_duration: u32 = track.duration.parse().unwrap_or(0);
+    let spotify_title = track.title.to_lowercase();
+    let clean_spotify_title = core_title(&spotify_title);
+    let spotify_duration: u32 = match track.duration.parse() {
+        Ok(d) => d,
+        Err(_) => {
+            eprintln!("Warning Failed to parse Spotify Duration {}", track.duration);
+            return None;
+        }
+    };
 
     for candidate in results {
-        let title = candidate.title.to_lowercase();
+        let yt_title = candidate.title.to_lowercase();
+        let title = core_title(&yt_title);
         let uploader = candidate.uploader.to_lowercase();
-        let yt_duration: u32 = candidate.duration.parse().unwrap_or(0);
+        let yt_duration: u32 = match candidate.duration.parse() {
+            Ok(d) => d,
+            Err(_) => {
+                eprintln!("Warning Failed to parse YT Duration {}", candidate.duration);
+                continue;
+            }
+        };
         let diff = yt_duration.abs_diff(spotify_duration);
 
         let mut score = 0;
 
         if title.contains("1 hour") {
-            score -= 2;
+            score -= 5;
         }
         if title.contains("slowed") {
-            score -= 2
+            score -= 5;
         }
         if title.contains("8d audio") {
-            score -= 2
+            score -= 5;
         }
         if title.contains("sped up") {
-            score -= 14
+            score -= 10;
         }
         if title.contains("live") {
-            score -= 2
-        }
-        if uploader.contains(&primary_artist) {
-            score += 2
-        } else {
-            score -= 1
+            score -= 3;
         }
 
-       
-        if !core.is_empty() && title.contains(&core) {
-            score += 4
+        if title.contains(&clean_spotify_title) {
+            score += 5;
+        }
+
+        if title.contains(&track.description.artist.to_lowercase()) {
+            score += 3;
+        }
+
+        if uploader.contains(&primary_artist) {
+            score += 2;
+        } else {
+            score -= 1;
+        }
+
+        if uploader.contains(&track.description.artist) {
+            score += 1;
         }
 
         if diff <= 2 {
-            score += 4;
+            score -= 2;
         } else if diff <= 5 {
-            score -= 1;
+            score -= 4;
         } else if diff <= 10 {
-            score -= 3;
+            score -= 5;
         } else if diff <= 20 {
             score -= 8;
         } else {
-            score -= 15;
+            continue;
         }
 
         if score > best_score {
