@@ -1,9 +1,6 @@
 use std::io::Error;
 use std::{path::PathBuf};
-
-
 use tokio::process::Command;
-
 use crate::dlp::search::Candidate;
 use crate::spotify::track::Track;
 
@@ -22,8 +19,8 @@ pub async fn download(best: &Candidate, track: &Track, output: &PathBuf) -> Resu
             "mp3",
             "--audio-quality",
             "0",
-            "--cookies",
-            "cookies.txt",
+            // "--cookies", 
+            // "cookies.txt",
             "--print",
             "after_move:filepath",
             "-o",
@@ -33,12 +30,7 @@ pub async fn download(best: &Candidate, track: &Track, output: &PathBuf) -> Resu
         .output()
         .await?;
 
-    println!("status: {}", result.status);
-    // println!("stdout:\n{}", String::from_utf8_lossy(&result.stdout));
-    // println!("stderr:\n{}", String::from_utf8_lossy(&result.stderr));
-
     let path_str = String::from_utf8_lossy(&result.stdout).trim().to_string();
-    println!("{path_str}");
     Ok(PathBuf::from(path_str))
 }
 

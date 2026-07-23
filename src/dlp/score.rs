@@ -1,6 +1,6 @@
 use crate::{
     dlp::search::Candidate,
-    spotify::{self, track::Track},
+    spotify::{track::Track},
 };
 
 fn core_title(t: &str) -> String {
